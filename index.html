@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="고양이 습성으로 알아보는 우리 고양이 MBTI 테스트">
+    <meta property="og:title" content="고양이 MBTI 테스트">
+    <meta property="og:description" content="10개의 질문으로 우리 고양이의 성격 유형을 알아보세요.">
+    <meta property="og:type" content="website">
+    <meta property="og:image" content="assets/cat-mascot.png">
+    <title>고양이 MBTI 테스트</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="hero" id="intro-view">
+        <div class="hero-copy">
+          <p class="eyebrow">Cat Habit Type</p>
+          <h1>우리 고양이 MBTI</h1>
+          <p class="lead">평소 습성을 고르면 성향 코드와 집사 맞춤 해석을 보여드려요.</p>
+          <button class="primary-button" id="start-button" type="button">테스트 시작</button>
+        </div>
+        <div class="hero-art" aria-hidden="true">
+          <img src="assets/cat-mascot.png" alt="">
+        </div>
+      </section>
+
+      <section class="quiz-panel is-hidden" id="quiz-view" aria-live="polite">
+        <div class="progress-row">
+          <span id="progress-label">1 / 10</span>
+          <div class="progress-track">
+            <div class="progress-bar" id="progress-bar"></div>
+          </div>
+        </div>
+        <h2 id="question-title"></h2>
+        <div class="choice-grid" id="choice-grid"></div>
+      </section>
+
+      <section class="result-view is-hidden" id="result-view">
+        <div class="result-card" id="result-card">
+          <img class="result-image" src="assets/cat-mascot.png" alt="고양이 일러스트">
+          <div class="result-copy">
+            <p class="eyebrow">Result</p>
+            <h2 id="result-type"></h2>
+            <h3 id="result-title"></h3>
+            <p id="result-description"></p>
+            <ul class="trait-list" id="trait-list"></ul>
+          </div>
+        </div>
+
+        <div class="action-row">
+          <button class="primary-button" id="copy-link-button" type="button">결과 링크 복사</button>
+          <button class="secondary-button" id="share-image-button" type="button">이미지 공유</button>
+          <button class="secondary-button" id="download-image-button" type="button">이미지 저장</button>
+          <button class="text-button" id="restart-button" type="button">다시 하기</button>
+        </div>
+        <p class="share-note" id="share-note" role="status"></p>
+      </section>
+    </main>
+
+    <canvas id="share-canvas" width="1200" height="1200" aria-hidden="true"></canvas>
+    <script src="script.js"></script>
+  </body>
+</html>
