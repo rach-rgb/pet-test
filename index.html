@@ -38,7 +38,9 @@
 
       <section class="result-view is-hidden" id="result-view">
         <div class="result-card" id="result-card">
-          <img class="result-image" src="assets/cat-mascot.png" alt="고양이 일러스트">
+          <div class="result-image-frame" id="result-image-frame">
+            <img class="result-image" id="result-image" src="assets/cat-mascot.png" alt="고양이 일러스트">
+          </div>
           <div class="result-copy">
             <p class="eyebrow">Result</p>
             <h2 id="result-type"></h2>
@@ -46,6 +48,11 @@
             <p id="result-description"></p>
             <ul class="trait-list" id="trait-list"></ul>
           </div>
+        </div>
+
+        <div class="cat-selector" aria-labelledby="cat-selector-title">
+          <p class="cat-selector-title" id="cat-selector-title">고양이 이미지 선택</p>
+          <div class="cat-option-grid" id="cat-option-grid"></div>
         </div>
 
         <div class="action-row">

@@ -90,6 +90,30 @@ const resultProfiles = {
   ENTJ: ["카리스마 영역 대표", "자기 영역과 요구가 분명한 고양이예요. 판단이 빠르고 자신감 있게 행동해 집사가 자연스럽게 따르게 됩니다.", ["카리스마", "주도적", "결단력"]]
 };
 
+const catOptions = {
+  calico: {
+    label: "삼색이",
+    imageFilter: "saturate(1.12) contrast(1.04)",
+    canvasFilter: "saturate(1.12) contrast(1.04)",
+    pattern: "calico"
+  },
+  cheese: {
+    label: "치즈",
+    imageFilter: "sepia(0.4) saturate(1.65) hue-rotate(-11deg) brightness(1.06)",
+    canvasFilter: "sepia(0.4) saturate(1.65) hue-rotate(-11deg) brightness(1.06)"
+  },
+  tabby: {
+    label: "고등어",
+    imageFilter: "none",
+    canvasFilter: "none"
+  },
+  tuxedo: {
+    label: "턱시도",
+    imageFilter: "grayscale(0.88) contrast(1.38) brightness(0.78)",
+    canvasFilter: "grayscale(0.88) contrast(1.38) brightness(0.78)"
+  }
+};
+
 const axisPairs = [
   ["E", "I"],
   ["S", "N"],
@@ -113,12 +137,16 @@ const resultType = document.querySelector("#result-type");
 const resultTitle = document.querySelector("#result-title");
 const resultDescription = document.querySelector("#result-description");
 const traitList = document.querySelector("#trait-list");
+const resultImage = document.querySelector("#result-image");
+const resultImageFrame = document.querySelector("#result-image-frame");
+const catOptionGrid = document.querySelector("#cat-option-grid");
 const shareNote = document.querySelector("#share-note");
 const shareCanvas = document.querySelector("#share-canvas");
 
 let currentQuestion = 0;
 let scores = {};
 let currentResult = null;
+let selectedCat = "tabby";
 
 function showView(view) {
   [introView, quizView, resultView].forEach((section) => {
@@ -130,6 +158,7 @@ function startQuiz() {
   currentQuestion = 0;
   scores = {};
   currentResult = null;
+  selectedCat = "tabby";
   shareNote.textContent = "";
   history.replaceState(null, "", location.pathname);
   showView(quizView);
@@ -173,8 +202,73 @@ function calculateType() {
     .join("");
 }
 
-function showResult(type) {
+function normalizeCat(cat) {
+  return catOptions[cat] ? cat : "tabby";
+}
+
+function renderCatOptions() {
+  catOptionGrid.replaceChildren();
+
+  Object.entries(catOptions).forEach(([key, option]) => {
+    const button = document.createElement("button");
+    button.className = "cat-option";
+    button.type = "button";
+    button.setAttribute("aria-pressed", String(key === selectedCat));
+    button.dataset.cat = key;
+
+    const thumb = document.createElement("span");
+    thumb.className = "cat-option-thumb";
+    if (option.pattern) {
+      thumb.dataset.catPattern = option.pattern;
+    }
+
+    const image = document.createElement("img");
+    image.src = "assets/cat-mascot.png";
+    image.alt = "";
+    image.style.filter = option.imageFilter;
+    thumb.append(image);
+
+    const label = document.createElement("span");
+    label.className = "cat-option-label";
+    label.textContent = option.label;
+
+    button.append(thumb, label);
+    button.addEventListener("click", () => selectCat(key));
+    catOptionGrid.append(button);
+  });
+}
+
+function updateCatImage() {
+  const option = catOptions[selectedCat];
+  resultImage.style.filter = option.imageFilter;
+  resultImageFrame.dataset.catPattern = option.pattern || "";
+
+  document.querySelectorAll(".cat-option").forEach((button) => {
+    button.setAttribute("aria-pressed", String(button.dataset.cat === selectedCat));
+  });
+}
+
+function updateResultUrl() {
+  if (!currentResult) {
+    return;
+  }
+
+  const url = new URL(location.href);
+  url.searchParams.set("type", currentResult.type);
+  url.searchParams.set("cat", selectedCat);
+  history.replaceState(null, "", url);
+}
+
+function selectCat(cat) {
+  selectedCat = normalizeCat(cat);
+  updateCatImage();
+  updateResultUrl();
+  shareNote.textContent = "";
+}
+
+function showResult(type, cat = selectedCat) {
   const profile = resultProfiles[type] || resultProfiles.INFP;
+  selectedCat = normalizeCat(cat);
   currentResult = {
     type,
     title: profile[0],
@@ -192,9 +286,9 @@ function showResult(type) {
     traitList.append(item);
   });
 
-  const url = new URL(location.href);
-  url.searchParams.set("type", type);
-  history.replaceState(null, "", url);
+  renderCatOptions();
+  updateCatImage();
+  updateResultUrl();
   showView(resultView);
 }
 
@@ -202,6 +296,7 @@ async function copyResultLink() {
   const url = new URL(location.href);
   if (currentResult) {
     url.searchParams.set("type", currentResult.type);
+    url.searchParams.set("cat", selectedCat);
   }
 
   if (navigator.clipboard && window.isSecureContext) {
@@ -224,6 +319,23 @@ function loadImage(src) {
     image.onerror = reject;
     image.src = src;
   });
+}
+
+function drawCalicoPatches(context, x, y, width, height) {
+  context.save();
+  context.globalCompositeOperation = "multiply";
+
+  context.fillStyle = "rgba(231, 133, 46, 0.52)";
+  context.beginPath();
+  context.ellipse(x + width * 0.71, y + height * 0.35, width * 0.15, height * 0.18, -0.28, 0, Math.PI * 2);
+  context.fill();
+
+  context.fillStyle = "rgba(31, 27, 24, 0.42)";
+  context.beginPath();
+  context.ellipse(x + width * 0.31, y + height * 0.47, width * 0.11, height * 0.14, 0.34, 0, Math.PI * 2);
+  context.fill();
+
+  context.restore();
 }
 
 function wrapText(context, text, x, y, maxWidth, lineHeight, maxLines = 4) {
@@ -250,6 +362,7 @@ function wrapText(context, text, x, y, maxWidth, lineHeight, maxLines = 4) {
 async function createResultBlob() {
   const context = shareCanvas.getContext("2d");
   const image = await loadImage("assets/cat-mascot.png");
+  const catOption = catOptions[selectedCat];
 
   context.clearRect(0, 0, shareCanvas.width, shareCanvas.height);
   context.fillStyle = "#fffdf8";
@@ -259,7 +372,13 @@ async function createResultBlob() {
   context.fillStyle = "#fff3d8";
   context.fillRect(0, 920, 1200, 280);
 
+  context.save();
+  context.filter = catOption.canvasFilter;
   context.drawImage(image, 100, 92, 430, 430);
+  context.restore();
+  if (catOption.pattern === "calico") {
+    drawCalicoPatches(context, 100, 92, 430, 430);
+  }
 
   context.fillStyle = "#167f83";
   context.font = "700 34px Arial";
@@ -329,9 +448,10 @@ async function downloadResultImage() {
 }
 
 function bootFromUrl() {
-  const type = new URLSearchParams(location.search).get("type");
+  const params = new URLSearchParams(location.search);
+  const type = params.get("type");
   if (type && resultProfiles[type.toUpperCase()]) {
-    showResult(type.toUpperCase());
+    showResult(type.toUpperCase(), params.get("cat"));
     return;
   }
   showView(introView);
