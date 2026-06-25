@@ -237,30 +237,6 @@ const tests = {
   }
 };
 
-const catOptions = {
-  calico: {
-    label: "삼색이",
-    imageFilter: "saturate(1.12) contrast(1.04)",
-    canvasFilter: "saturate(1.12) contrast(1.04)",
-    pattern: "calico"
-  },
-  cheese: {
-    label: "치즈",
-    imageFilter: "sepia(0.4) saturate(1.65) hue-rotate(-11deg) brightness(1.06)",
-    canvasFilter: "sepia(0.4) saturate(1.65) hue-rotate(-11deg) brightness(1.06)"
-  },
-  tabby: {
-    label: "고등어",
-    imageFilter: "none",
-    canvasFilter: "none"
-  },
-  tuxedo: {
-    label: "턱시도",
-    imageFilter: "grayscale(0.88) contrast(1.38) brightness(0.78)",
-    canvasFilter: "grayscale(0.88) contrast(1.38) brightness(0.78)"
-  }
-};
-
 const homeView = document.querySelector("#home-view");
 const introView = document.querySelector("#intro-view");
 const quizView = document.querySelector("#quiz-view");
@@ -283,9 +259,6 @@ const resultType = document.querySelector("#result-type");
 const resultTitle = document.querySelector("#result-title");
 const resultDescription = document.querySelector("#result-description");
 const traitList = document.querySelector("#trait-list");
-const resultImage = document.querySelector("#result-image");
-const resultImageFrame = document.querySelector("#result-image-frame");
-const catOptionGrid = document.querySelector("#cat-option-grid");
 const shareNote = document.querySelector("#share-note");
 const shareCanvas = document.querySelector("#share-canvas");
 
@@ -293,7 +266,6 @@ let activeTest = tests.mbti;
 let currentQuestion = 0;
 let scores = {};
 let currentResult = null;
-let selectedCat = "tabby";
 
 function showView(view) {
   [homeView, introView, quizView, resultView].forEach((section) => {
@@ -304,10 +276,6 @@ function showView(view) {
 
 function normalizeTestId(testId) {
   return tests[testId] ? testId : "mbti";
-}
-
-function normalizeCat(cat) {
-  return catOptions[cat] ? cat : "tabby";
 }
 
 function openHome() {
@@ -331,7 +299,6 @@ function startQuiz() {
   currentQuestion = 0;
   scores = {};
   currentResult = null;
-  selectedCat = "tabby";
   shareNote.textContent = "";
   history.replaceState(null, "", `${location.pathname}?quiz=${activeTest.id}`);
   showView(quizView);
@@ -369,48 +336,6 @@ function selectChoice(choiceScores) {
   showResult(activeTest.calculate(scores));
 }
 
-function renderCatOptions() {
-  catOptionGrid.replaceChildren();
-
-  Object.entries(catOptions).forEach(([key, option]) => {
-    const button = document.createElement("button");
-    button.className = "cat-option";
-    button.type = "button";
-    button.setAttribute("aria-pressed", String(key === selectedCat));
-    button.dataset.cat = key;
-
-    const thumb = document.createElement("span");
-    thumb.className = "cat-option-thumb";
-    if (option.pattern) {
-      thumb.dataset.catPattern = option.pattern;
-    }
-
-    const image = document.createElement("img");
-    image.src = "assets/cat-mascot.png";
-    image.alt = "";
-    image.style.filter = option.imageFilter;
-    thumb.append(image);
-
-    const label = document.createElement("span");
-    label.className = "cat-option-label";
-    label.textContent = option.label;
-
-    button.append(thumb, label);
-    button.addEventListener("click", () => selectCat(key));
-    catOptionGrid.append(button);
-  });
-}
-
-function updateCatImage() {
-  const option = catOptions[selectedCat];
-  resultImage.style.filter = option.imageFilter;
-  resultImageFrame.dataset.catPattern = option.pattern || "";
-
-  document.querySelectorAll(".cat-option").forEach((button) => {
-    button.setAttribute("aria-pressed", String(button.dataset.cat === selectedCat));
-  });
-}
-
 function updateResultUrl() {
   if (!currentResult) {
     return;
@@ -419,20 +344,12 @@ function updateResultUrl() {
   const url = new URL(location.href);
   url.searchParams.set("quiz", activeTest.id);
   url.searchParams.set("type", currentResult.type);
-  url.searchParams.set("cat", selectedCat);
+  url.searchParams.delete("cat");
   history.replaceState(null, "", url);
 }
 
-function selectCat(cat) {
-  selectedCat = normalizeCat(cat);
-  updateCatImage();
-  updateResultUrl();
-  shareNote.textContent = "";
-}
-
-function showResult(type, cat = selectedCat) {
+function showResult(type) {
   const profile = activeTest.profiles[type] || activeTest.profiles[activeTest.defaultResult];
-  selectedCat = normalizeCat(cat);
   currentResult = {
     type,
     title: profile[0],
@@ -451,8 +368,6 @@ function showResult(type, cat = selectedCat) {
     traitList.append(item);
   });
 
-  renderCatOptions();
-  updateCatImage();
   updateResultUrl();
   showView(resultView);
 }
@@ -462,7 +377,7 @@ async function copyResultLink() {
   if (currentResult) {
     url.searchParams.set("quiz", activeTest.id);
     url.searchParams.set("type", currentResult.type);
-    url.searchParams.set("cat", selectedCat);
+    url.searchParams.delete("cat");
   }
 
   if (navigator.clipboard && window.isSecureContext) {
@@ -476,32 +391,6 @@ async function copyResultLink() {
     input.remove();
   }
   shareNote.textContent = "결과 링크를 복사했어요.";
-}
-
-function loadImage(src) {
-  return new Promise((resolve, reject) => {
-    const image = new Image();
-    image.onload = () => resolve(image);
-    image.onerror = reject;
-    image.src = src;
-  });
-}
-
-function drawCalicoPatches(context, x, y, width, height) {
-  context.save();
-  context.globalCompositeOperation = "multiply";
-
-  context.fillStyle = "rgba(231, 133, 46, 0.52)";
-  context.beginPath();
-  context.ellipse(x + width * 0.71, y + height * 0.35, width * 0.15, height * 0.18, -0.28, 0, Math.PI * 2);
-  context.fill();
-
-  context.fillStyle = "rgba(31, 27, 24, 0.42)";
-  context.beginPath();
-  context.ellipse(x + width * 0.31, y + height * 0.47, width * 0.11, height * 0.14, 0.34, 0, Math.PI * 2);
-  context.fill();
-
-  context.restore();
 }
 
 function wrapText(context, text, x, y, maxWidth, lineHeight, maxLines = 4) {
@@ -527,8 +416,6 @@ function wrapText(context, text, x, y, maxWidth, lineHeight, maxLines = 4) {
 
 async function createResultBlob() {
   const context = shareCanvas.getContext("2d");
-  const image = await loadImage("assets/cat-mascot.png");
-  const catOption = catOptions[selectedCat];
 
   context.clearRect(0, 0, shareCanvas.width, shareCanvas.height);
   context.fillStyle = "#fffdf8";
@@ -538,25 +425,17 @@ async function createResultBlob() {
   context.fillStyle = "#fff3d8";
   context.fillRect(0, 920, 1200, 280);
 
-  context.save();
-  context.filter = catOption.canvasFilter;
-  context.drawImage(image, 100, 92, 430, 430);
-  context.restore();
-  if (catOption.pattern === "calico") {
-    drawCalicoPatches(context, 100, 92, 430, 430);
-  }
-
   context.fillStyle = "#167f83";
   context.font = "700 34px Arial";
-  context.fillText(activeTest.eyebrow, 610, 155);
+  context.fillText(activeTest.eyebrow, 100, 160);
 
   context.fillStyle = "#f46f61";
-  context.font = activeTest.id === "past-life" ? "900 78px Arial" : "900 132px Arial";
-  wrapText(context, activeTest.id === "past-life" ? currentResult.title : currentResult.type, 610, 260, 470, 86, 2);
+  context.font = activeTest.id === "past-life" ? "900 92px Arial" : "900 132px Arial";
+  wrapText(context, activeTest.id === "past-life" ? currentResult.title : currentResult.type, 100, 300, 980, 100, 2);
 
   context.fillStyle = "#202124";
   context.font = "900 52px Arial";
-  wrapText(context, activeTest.id === "past-life" ? "우리 고양이의 전생" : currentResult.title, 610, 420, 470, 62, 2);
+  wrapText(context, activeTest.id === "past-life" ? "우리 고양이의 전생" : currentResult.title, 100, 470, 980, 62, 2);
 
   context.fillStyle = "#60656f";
   context.font = "700 34px Arial";
@@ -621,7 +500,7 @@ function bootFromUrl() {
 
   const normalizedType = activeTest.id === "past-life" ? rawType : rawType?.toUpperCase();
   if (normalizedType && activeTest.profiles[normalizedType]) {
-    showResult(normalizedType, params.get("cat"));
+    showResult(normalizedType);
     return;
   }
 
