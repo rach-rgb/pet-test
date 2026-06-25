@@ -112,7 +112,7 @@ const tests = {
     eyebrow: "Past Life Match",
     title: "고양이 전생 테스트",
     lead: "성격과 기호를 고르면 우리 고양이의 전생 모습을 알려드려요.",
-    resultLabel: "Past Life",
+    resultLabel: "전생에 우리 고양이의 직업은?",
     shareTitle: "고양이 전생 테스트",
     filePrefix: "cat-past-life",
     defaultResult: "MOON_LIBRARIAN",
@@ -358,8 +358,8 @@ function showResult(type) {
   };
 
   resultEyebrow.textContent = activeTest.resultLabel;
-  resultType.textContent = activeTest.id === "past-life" ? "전생" : currentResult.type;
-  resultTitle.textContent = currentResult.title;
+  resultType.textContent = activeTest.id === "past-life" ? currentResult.title : currentResult.type;
+  resultTitle.textContent = activeTest.id === "past-life" ? "" : currentResult.title;
   resultDescription.textContent = currentResult.description;
   traitList.replaceChildren();
   currentResult.traits.forEach((trait) => {
